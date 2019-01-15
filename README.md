@@ -1,3 +1,3 @@
 # RaycastJobBatch
 
-Schedule many RaycastCommand jobs in single batch
+Simplifies RaycastCommand job Schedule process without performance overhead.
