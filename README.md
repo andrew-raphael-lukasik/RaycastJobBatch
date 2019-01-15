@@ -1,3 +1,3 @@
 # RaycastJobBatch
 
-Simplifies RaycastCommand job Schedule process without performance overhead.
+Goal: Schedule multiple RaycastCommand jobs in a batch. Contain NativeArray management inside.
