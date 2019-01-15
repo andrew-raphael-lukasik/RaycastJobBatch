@@ -1,3 +1,3 @@
 # RaycastJobBatch
 
-Schedule multiple raycasts in single batch
+Schedule many RaycastCommand jobs in single batch
