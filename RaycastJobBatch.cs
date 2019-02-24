@@ -4,16 +4,20 @@ using Unity.Jobs;
 
 public struct RaycastJobBatch : System.IDisposable
 {
-	#region FIELDS & PROPERTIES
+	#region FIELDS
+
 	
 	public NativeArray<RaycastCommand> commands;
 	public NativeArray<RaycastHit> results;
-	
 	JobHandle _handle;
-	public JobHandle handle { get{ return _handle; } }
+	public JobHandle handle => _handle;
+
+	Allocator _allocator;
+
 	
 	#endregion
 	#region PROPERTIES
+
 	
 	public int Length
 	{
@@ -28,38 +32,49 @@ public struct RaycastJobBatch : System.IDisposable
 			if( this.Length!=value )
 			{
 				this.Dispose();
-				this.commands = new NativeArray<RaycastCommand>( value , Allocator.Persistent );
-				this.results = new NativeArray<RaycastHit>( value , Allocator.Persistent , NativeArrayOptions.UninitializedMemory );
+				this.commands = new NativeArray<RaycastCommand>( value , _allocator );
+				this.results = new NativeArray<RaycastHit>( value , _allocator , NativeArrayOptions.UninitializedMemory );
 			}
 		}
 	}
 
+
 	#endregion
 	#region CONSTRUCTORS
+	
 
-	public RaycastJobBatch ( int length )
+	public RaycastJobBatch ( int length , Allocator allocator )
 	{
-		this.commands = new NativeArray<RaycastCommand>( length , Allocator.Persistent );
-		this.results = new NativeArray<RaycastHit>( length , Allocator.Persistent , NativeArrayOptions.UninitializedMemory );
+		this._allocator = allocator;
+		this.commands = new NativeArray<RaycastCommand>( length , _allocator );
+		this.results = new NativeArray<RaycastHit>( length , _allocator , NativeArrayOptions.UninitializedMemory );
 		this._handle = default(JobHandle);
 	}
+
 	
 	#endregion
 	#region PUBLIC METHODS
 
+
 	public void Schedule ( int minCommandsPerJob = 32 , JobHandle dependsOn = default(JobHandle) )
 	{
+		#if DEBUG
+		if( _handle.IsCompleted==false ) Debug.LogWarning( "Scheduling when job is not complete" );
+		#endif
 		this._handle = RaycastCommand.ScheduleBatch( this.commands , this.results , minCommandsPerJob , dependsOn );
 	}
 
 	public void Complete ()
 	{
-		if( this._handle.IsCompleted==false ) { this._handle.Complete(); }
+		this._handle.Complete();
 		this._handle = default(JobHandle);
 	}
 
 	public void CopyResults ( ref RaycastHit[] array )
 	{
+		#if DEBUG
+		if( _handle.IsCompleted==false ) Debug.LogWarning( "Copying results when job is not complete" );
+		#endif
 		if( array.Length!=this.results.Length )
 		{
 			System.Array.Resize( ref array , this.results.Length );
@@ -73,6 +88,7 @@ public struct RaycastJobBatch : System.IDisposable
 		if( this.commands.IsCreated ) { this.commands.Dispose(); }
 		if( this.results.IsCreated ) { this.results.Dispose(); }
 	}
+
 
 	#endregion
 }
